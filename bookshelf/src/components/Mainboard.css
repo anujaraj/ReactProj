@@ -1,0 +1,45 @@
+.sidepanel{
+    height: 100%; /* Full height */
+    width: 350px; /* Fixed width */
+    position: fixed; /* Stays in place while scrolling */
+    z-index: 1; /* Ensures it's on top of other content */
+    top: 0; /* Aligns to the top */
+    left: 0; /* Aligns to the left */
+    background-color: #333; /* Dark background color */
+    overflow-x: hidden; /* Hides horizontal scrollbar */
+    padding-top: 20px; /* Space from the top */
+    color: white; /* Text color */
+}
+
+.board{
+    margin-left: 350px; /* leave space for side panel */
+  min-height: 100vh;
+  background-color: #f0f0f0;
+  padding: 20px;
+  position: relative;
+  z-index: 2; /* ensures board is above panel for dragging */
+}
+
+.addedList{
+background-color:black ;
+  color:#f5f5f5;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+}
+
+.button {
+  background-color: #e74c3c;  /* Red color for “remove” */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;           /* Slightly bigger click area */
+  cursor: pointer;
+  font-weight: bold;
+  float: right;                /* Position it to the right of the item */
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #c0392b;  /* Darker red on hover */
+}
