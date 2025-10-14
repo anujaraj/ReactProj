@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Shelf.css';
 import { useDraggable } from "@dnd-kit/core";
 import {CSS} from '@dnd-kit/utilities';
+
+import { getMainItems } from './api';
+import { getSubItems } from './api';
 
 function DraggableItem({id,name}){
 const {attributes, listeners, setNodeRef, transform} = useDraggable({
@@ -22,24 +25,42 @@ return(
 function Shelf(){
 
     // which item is currently being selected
-    const [items,setItems]=useState(null)
+    const [items,setItems]=useState();
+
+    const [mainItem,setMainItems] = useState([]);
+    useEffect(()=>{
+        const fetchMainItems=async()=>{
+            try{
+                const res = await getMainItems();
+                setMainItems(res.data);
+            }
+            catch(error){
+                console.error("Error fetching main items:", error);
+            }
+        }
+        fetchMainItems();
+    },[])
+
+    const [subItems,setSubItems] = useState({});
+    useEffect(()=>{
+        const fetchSubItems=async()=>{
+            
+            try{
+                const res = await getSubItems();
+                console.log("Fetched subItems:", subItems);
+                setSubItems(res.data);
+            }
+            catch(error){
+                console.log("Error finding subitem",error);
+            }
+        }
+        fetchSubItems();
+    },[])
 
     const handleClick=(itemId)=>{
         setItems(items === itemId ? null :itemId)
     }
 
-    
-    const mainItem=[
-        {id: "1", name:"Book"},
-        {id: "2", name:"Author"},
-        {id: "3", name:"Genre"}
-    ]
-
-    const subItems={
-        1: ["Alice in Wonderland","Good Girls Guide to murder"],
-        2: ["Holly Jakson","J.K Rowling"],
-        3: ["Horror"]
-    }
     return(
         <div className="container-grid" >
             {mainItem.map((item)=>(
@@ -48,11 +69,9 @@ function Shelf(){
                 {items === item.id && 
                 <div className="sub-items">
                     
-                    {subItems[item.id].map((sub)=>(
+                    {/* //?. to ensure that item.id is converted to number  */}
+                    {subItems?.[item.id]?.map((sub)=>(
                     <DraggableItem key={sub} id={sub} name={sub}>
-                     {/* <div className="sub-item">
-                            {sub}
-                        </div> */}
                     </DraggableItem>
                        
                     ))}

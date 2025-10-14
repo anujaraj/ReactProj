@@ -1,0 +1,5 @@
+[
+        {"id": "1", "name":"Book"},
+        {"id": "2", "name":"Author"},
+        {"id": "3", "name":"Genre"}
+]
