@@ -2,7 +2,7 @@
     height: 100%; /* Full height */
     width: 350px; /* Fixed width */
     position: fixed; /* Stays in place while scrolling */
-    z-index: 1; /* Ensures it's on top of other content */
+    z-index: 2; /* Ensures it's on top of other content */
     top: 0; /* Aligns to the top */
     left: 0; /* Aligns to the left */
     background-color: #333; /* Dark background color */
@@ -12,8 +12,8 @@
 }
 
 .board{
-    margin-left: 350px; /* leave space for side panel */
-  min-height: 100vh;
+  margin-left: 350px; /* leave space for side panel */
+  min-height: 75vh;
   background-color: #f0f0f0;
   padding: 20px;
   position: relative;

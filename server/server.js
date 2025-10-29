@@ -1,152 +1,205 @@
+require("dotenv").config();
+const sequelize = require("./db");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const { create } = require("domain");
+const MainItems = require('./models/MainItems');
+const SubItems = require('./models/SubItems');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = 5000;
 
-const subItem = path.join(__dirname,'subItem.json');
-const mainList = path.join(__dirname,'mainItem.json');
-
-const readData = (file_path)=>{
-    if (!fs.existsSync(file_path)){
-        return [];
-    }
-    const parsedData = fs.readFileSync(file_path,"utf-8");
-    return parsedData ? JSON.parse(parsedData) : [];
-}
-
-const writedata = (file_path,data)=>{
-    fs.writeFileSync(file_path,JSON.stringify(data,null,2));
-}
 
 //CRUD for Main Item list
 
-app.get('/api/list',(req,res)=>{
-    const getData = readData(mainList);
-    res.json(getData);
+app.get('/api/debug', async (req, res) => {
+  const data = await MainItems.findAll({
+    include: SubItems
+  });
+  res.json(data);
 });
 
-app.get("/api/list/:id",(req,res)=>{
-    const allData = readData(mainList);
-    const item = allData.find(i => i.id === req.params.id);
+
+app.get('/api/list',async (req,res)=>{
+    try{
+    const getData = await MainItems.findAll();
+    res.json(getData)
+    } catch(err){
+        res.status(500).json({error:err.message})
+    }
+});
+
+app.get("/api/list/:id",async (req,res)=>{
+    try{
+    const item = await MainItems.findByPk(req.params.id);
     if(!item){
         return res.status(404).json("item not found")
 
     }
     res.json(item);
+}catch(err){
+    res.status(500).json({error:err.message})
+}
 
 });
 
-app.post("/api/list/",(req,res)=>{
-    const createdData = req.body;
-    const data = readData(mainList);
-    if(data.find(i=>i.id===createdData.id)){
-        return res.status(409).json("data already present");
+
+app.post("/api/list", async(req,res)=>{
+    try{
+        const {name} = req.body;
+         if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+        }
+        const data = await MainItems.findOne({where :{name}});
+        if(data){
+            return res.status(409).json({ error: "Item already present" });
+        }
+        
+        const newItem = await MainItems.create({name});
+        res.status(201).json({ message: "Item added", newItem });
+
+    }catch(err){
+        res.status(500).json({error:err.message})
     }
+})
 
-    data.push(createdData);
-    writedata(mainList,data);
-    res.status(201).json({ message: "Item added", data });
-
-});
-
-app.put("/api/list/:id",(req,res)=>{
+app.put("/api/list/:id",async (req,res)=>{
+    try{
     const id=req.params.id;
     const updatedData = req.body;
-    const data = readData(mainList);
-    const index = data.findIndex(i => i.id === id);
-    if (index === -1) {
+    const data = await MainItems.findByPk(id);
+   
+    if (!data) {
         return res.status(404).json({ message: "Not found" });
     }
-
-    data[index] = { ...data[index], ...updatedData };
-    writedata(mainList,data);
+    await data.update(updatedData);
     res.json({ message: "Item updated", data });
-
+    } catch(error){
+        console.error("Error updating item:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
-app.delete("/api/list/:id",(req,res)=>{
-    const data=readData(mainList);
+app.delete("/api/list/:id",async (req,res)=>{
+    try{
     const id=req.params.id;
-    const index = data.findIndex(i => i.id === id);
-    
-    if (index === -1) {
+    const delData = await MainItems.destroy({
+        where:{id:id}
+    });
+
+    if (delData==0) {
         return res.status(404).json({ message: "Not found" });
     }
-    const updatedData = data.filter(i => i.id !== id);
-    writedata(mainList,updatedData);
-    res.json({message:"Item Deleted"},updatedData)
 
+    res.json({message:"Item Deleted"},delData)
 
+    }catch(err){
+        res.status(500).json({error:err.message}); 
+    }
 })
 
 //CRUD for subitems
 
-app.get('/api/sublist',(req,res)=>{
-    const getData = readData(subItem);
-    res.json(getData);
+app.get('/api/sublist',async (req,res)=>{
+    try{
+    const getData = await SubItems.findAll();
+    const groupedData = getData.reduce((accumulator,item)=>{
+        if(!accumulator[item.mainItemId]) {
+            accumulator[item.mainItemId]=[];
+        }
+        accumulator[item.mainItemId].push(item.name);
+        return accumulator;
+    },
+    {})
+    res.json(groupedData);
+    }catch(err){
+        res.status(500).json({error:err.message});
+    }
 });
 
-app.get("/api/sublist/:id",(req,res)=>{
-    const allData = readData(subItem);
+app.get("/api/sublist/:id",async (req,res)=>{
+    try{
     const subId = req.params.id;    
-    const item =  allData[subId];
+    const item = await SubItems.findByPk(subId);
     res.json(item);
-
-});
-
-app.post("/api/sublist/:id",(req,res)=>{
-    const id= req.params.id;
-    const createdData = req.body.name;
-    const data = readData(subItem);
-    if(!data[id]) data[id] = [];
-
-    data[id].push(createdData);
-    writedata(subItem,data);
-    res.status(201).json({ message: "Item added", data });
-
-});
-
-app.put("/api/sublist/:id",(req,res)=>{
-    const id=req.params.id;
-    const updatedData = req.body;
-    const data = readData(subItem);
-    const index = data.findIndex(i => i.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: "Not found" });
+    }catch(err){
+        res.status(500).json({error:err.message});
     }
 
-    data[index] = { ...data[index], ...updatedData };
-    writedata(subItem,data);
-    res.json({ message: "Item updated", data });
-
 });
 
-app.delete("/api/sublist/:id/:subName",(req,res)=>{
-    const data=readData(subItem);
-    const {id,subName}=req.params;
+app.post("/api/sublist/:mainItemId", async (req, res) => {
+  try {
+    const { mainItemId } = req.params;
+    const { name } = req.body;
 
-    console.log("ID:", id, "Name:", subName);
-    console.log("Before delete:", data[id]);
+    console.log("📩 Incoming subitem request:", { mainItemId, name });
 
-    if (!data[id]) return res.status(404).json({ error: "Not found" });
-    data[id]= data[id].filter(item => item !== subName);
+    if (!name) {
+      return res.status(400).json({ error: "Subitem name required" });
+    }
 
-    // Save changes
-    writedata(subItem, data);
-    console.log("After delete:", data[id]);
-    res.json({ message: "Item Deleted", subItems: data[id] });
+    const mainItemIdInt = parseInt(mainItemId, 10);
+    if (isNaN(mainItemIdInt)) {
+      return res.status(400).json({ error: "Invalid mainItemId" });
+    }
+
+    // 🔍 Check parent exists (to avoid FK error)
+    const mainItem = await MainItems.findByPk(mainItemIdInt);
+    if (!mainItem) {
+      console.log("⚠️ No main item found for ID:", mainItemIdInt);
+      return res.status(404).json({ error: "Main item not found" });
+    }
+
+    // 🔍 Check for duplicates
+    const existing = await SubItems.findOne({
+      where: { name, mainItemId: mainItemIdInt },
+    });
+
+    if (existing) {
+      console.log("⚠️ Subitem already exists:", existing.toJSON());
+      return res.status(409).json({ error: "Subitem already present" });
+    }
+
+    console.log("🛠 Creating subitem with data:", { name, mainItemId: mainItemIdInt });
+
+    const newItem = await SubItems.create({
+      name,
+      mainItemId: mainItemIdInt,
+    });
+
+    console.log("✅ Successfully created subitem:", newItem.toJSON());
+    res.status(201).json({ message: "Subitem added", newItem });
+
+  } catch (err) {
+    console.error("❌ Sequelize/Server Error while creating subitem:");
+    console.error(err);
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
 
 
+app.delete("/api/sublist/:id/",async (req,res)=>{
+    try{
+    const id=req.params.id;
+    const delData = await SubItems.destroy({
+        where:{id:id}
+    });
+    if (delData==0) {
+        return res.status(404).json({ message: "Not found" });
+    }
+    res.json({message:"Item Deleted"},delData)
+    }catch(err){
+        res.status(500).json({error:err.message}); 
+    }
 })
 
 
 app.listen(PORT,()=>{
-    console.log("listening to port 3000");
+    console.log("listening to port 5000");
 });

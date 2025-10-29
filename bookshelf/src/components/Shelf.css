@@ -10,13 +10,13 @@
   gap: 10px;
 }
 
-.main-item {
+/* .main-item {
   background-color: #e0e0e0;
   padding: 10px;
   cursor: pointer;
   border-radius: 6px;
   font-weight: 500;
-}
+} */
 
 .grid-item {
   background-color: grey;
@@ -40,4 +40,17 @@
   margin-bottom: 4px;
   border-radius: 4px;
   cursor: grab;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: red;
+  margin-left: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.delete-btn:hover {
+  color: darkred;
 }

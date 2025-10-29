@@ -5,6 +5,8 @@ import {CSS} from '@dnd-kit/utilities';
 
 import { getMainItems } from './api';
 import { getSubItems } from './api';
+import { delMainItem } from './api';
+import { delSubItem } from './api';
 
 function DraggableItem({id,name}){
 const {attributes, listeners, setNodeRef, transform} = useDraggable({
@@ -25,9 +27,9 @@ return(
 function Shelf(){
 
     // which item is currently being selected
-    const [items,setItems]=useState();
-
+    const [selectedId, setSelectedId] = useState(null);
     const [mainItem,setMainItems] = useState([]);
+
     useEffect(()=>{
         const fetchMainItems=async()=>{
             try{
@@ -42,6 +44,7 @@ function Shelf(){
     },[])
 
     const [subItems,setSubItems] = useState({});
+
     useEffect(()=>{
         const fetchSubItems=async()=>{
             
@@ -58,30 +61,55 @@ function Shelf(){
     },[])
 
     const handleClick=(itemId)=>{
-        setItems(items === itemId ? null :itemId)
+        setSelectedId(selectedId === itemId ? null :itemId)
     }
+
+    const handleDeleteMain=async(mainId)=>{
+        if (window.confirm("Delete this main item and its subitems?")) {
+        try {
+            await delMainItem(mainId);
+            setMainItems(mainItem.filter(item=>item.id!==mainId));
+            const updatedSubItems = {...subItems};
+            delete updatedSubItems[mainId];
+            setSubItems(updatedSubItems);
+            }catch (err) {
+            console.error(err);
+            }
+        }
+    };
+
 
     return(
         <div className="container-grid" >
             {mainItem.map((item)=>(
                 <div key={item.id} className='grid-item' 
                 onClick={()=>{handleClick(item.id)}}>{item.name}
-                {items === item.id && 
+
+                <button
+                className="delete-btn"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteMain(item.id);
+                }}
+                >
+                ❌
+                </button>
+
+                {selectedId === item.id && 
                 <div className="sub-items">
                     
                     {/* //?. to ensure that item.id is converted to number  */}
-                    {subItems?.[item.id]?.map((sub)=>(
-                    <DraggableItem key={sub} id={sub} name={sub}>
-                    </DraggableItem>
-                       
+                    {subItems?.[item.id]?.map((sub,i)=>(
+                    <DraggableItem key={i} id={`${item.id}-${sub}`} name={sub}>
+                    </DraggableItem>           
                     ))}
                 </div>
                 }
-                </div>
-                
+                </div>   
             ))}
         </div>
     )
 }
 
 export default Shelf;
+
