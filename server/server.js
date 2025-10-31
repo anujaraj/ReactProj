@@ -184,20 +184,24 @@ app.post("/api/sublist/:mainItemId", async (req, res) => {
 });
 
 
-app.delete("/api/sublist/:id/",async (req,res)=>{
-    try{
-    const id=req.params.id;
-    const delData = await SubItems.destroy({
-        where:{id:id}
+app.delete("/api/sublist/:mainId/:subName", async (req, res) => {
+  try {
+    const { mainId, subName } = req.params;
+
+    const deleted = await SubItems.destroy({
+      where: { mainItemId: mainId, name: subName },
     });
-    if (delData==0) {
-        return res.status(404).json({ message: "Not found" });
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Subitem not found" });
     }
-    res.json({message:"Item Deleted"},delData)
-    }catch(err){
-        res.status(500).json({error:err.message}); 
-    }
-})
+
+    res.json({ message: "Subitem deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 app.listen(PORT,()=>{

@@ -15,6 +15,6 @@ export const postSubItem = (mainItemId,data)=>API.post(`/sublist/${mainItemId}`,
 
 
 export const delMainItem = (id)=>API.delete(`/list/${id}`);
-export const delSubItem = (id)=>API.delete(`/sublist/${id}/`);
+export const delSubItem = (mainId,subName)=>API.delete(`/sublist/${mainId}/${encodeURIComponent(subName)}`);
 
 export const putMainItem =(id,data)=>API.put(`/list${id}`, data);

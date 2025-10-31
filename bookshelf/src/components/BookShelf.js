@@ -8,7 +8,7 @@ import { getSubItems } from './api';
 import { delMainItem } from './api';
 import { delSubItem } from './api';
 
-function DraggableItem({id,name}){
+function DraggableItem({id,name,onDelete}){
 const {attributes, listeners, setNodeRef, transform} = useDraggable({
     id,
   });
@@ -18,7 +18,18 @@ const {attributes, listeners, setNodeRef, transform} = useDraggable({
 
 return(
     <div ref={setNodeRef} style={style} {...listeners} {...attributes} className='sub-item'>
-        {name}
+        <span>{name}</span>
+        <button
+            className="delete-btn"
+            onMouseDown={(e) => e.stopPropagation()} // 🛑 stops drag before click
+            onTouchStart={(e) => e.stopPropagation()} // 🛑 for mobile
+            onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+            }}
+        >
+            ❌
+        </button>
     </div>
 )
 }
@@ -78,13 +89,28 @@ function Shelf(){
         }
     };
 
+    const handleDeleteSubItem = async (subName, mainId) => {
+    if (window.confirm(`Delete subitem "${subName}"?`)) {
+        try {
+        await delSubItem(mainId, subName); // call delete by name
+        const updatedSubItems = { ...subItems };
+        updatedSubItems[mainId] = updatedSubItems[mainId].filter(
+            (name) => name !== subName
+        );
+        setSubItems(updatedSubItems);
+        } catch (err) {
+        console.error(err);
+        }
+    }
+    };
+
+
 
     return(
         <div className="container-grid" >
             {mainItem.map((item)=>(
                 <div key={item.id} className='grid-item' 
                 onClick={()=>{handleClick(item.id)}}>{item.name}
-
                 <button
                 className="delete-btn"
                 onClick={(e) => {
@@ -100,7 +126,7 @@ function Shelf(){
                     
                     {/* //?. to ensure that item.id is converted to number  */}
                     {subItems?.[item.id]?.map((sub,i)=>(
-                    <DraggableItem key={i} id={`${item.id}-${sub}`} name={sub}>
+                    <DraggableItem key={i} id={`${item.id}-${sub}`} name={sub} onDelete={()=>handleDeleteSubItem(sub,item.id)}>
                     </DraggableItem>           
                     ))}
                 </div>

@@ -1,10 +1,11 @@
-import { DndContext } from '@dnd-kit/core';
+import { DndContext,MouseSensor, useSensor, useSensors } from '@dnd-kit/core';
 import {useState} from 'react';
 import './App.css';
 import Shelf from './components/BookShelf.js';
 import Board from './components/MainBoard.js';
 import './components/Mainboard.css';
 import Home from './components/Home.js';
+
 
 
 
@@ -21,6 +22,16 @@ function App() {
       }
     }
   }
+
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      delay: 100, // 200ms hold before drag starts
+      tolerance: 5,
+    },
+  });
+
+  const sensors = useSensors(mouseSensor);
+
 
 
 
@@ -45,7 +56,7 @@ function App() {
       <div className='pageContainer'>
       {currentPage ==="home" && <Home/>}
       {currentPage === "shelf" && (
-        <DndContext onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="App">
             <Board list={boardItems} setList={setBoardItems}/>
             <div className="sidepanel">
